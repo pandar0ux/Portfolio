@@ -10,10 +10,13 @@ export const meta: MetaFunction = () => {
 export default function Home() {
   return (
     <div>
-      <h1>Portfolio</h1>
-      <p>Welcome to my portfolio website.</p>
+      <h1>Mon Portfolio</h1>
+
       <p>
         <Link to="/signin">Se connecter</Link>
+      </p>
+      <p>
+        <Link to="/signup">Créer un compte</Link>
       </p>
     </div>
   );
