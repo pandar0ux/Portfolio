@@ -1,12 +1,10 @@
 import {
-    Form,
     Link,
-    redirect,
-    useActionData,
+    useNavigate,
     useNavigation,
-    type ActionFunctionArgs,
     type MetaFunction,
 } from "react-router";
+import { useState, type FormEvent } from "react";
 
 type ActionData = {
     fieldErrors?: {
@@ -28,54 +26,58 @@ export const meta: MetaFunction = () => {
     ];
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-    const formData = await request.formData();
-
-    const name = String(formData.get("name") ?? "").trim();
-    const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
-
-    const fieldErrors: ActionData["fieldErrors"] = {};
-
-    if (!name) {
-        fieldErrors.name = "Le nom est requis.";
-    } else if (name.length < 2) {
-        fieldErrors.name = "Le nom doit contenir au moins 2 caractères.";
-    }
-
-    if (!email) {
-        fieldErrors.email = "L'email est requis.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        fieldErrors.email = "Format d'email invalide.";
-    }
-
-    if (!password) {
-        fieldErrors.password = "Le mot de passe est requis.";
-    } else if (password.length < 8) {
-        fieldErrors.password = "Le mot de passe doit contenir au moins 8 caractères.";
-    }
-
-    if (!confirmPassword) {
-        fieldErrors.confirmPassword = "Merci de confirmer le mot de passe.";
-    } else if (confirmPassword !== password) {
-        fieldErrors.confirmPassword = "Les mots de passe ne correspondent pas.";
-    }
-
-    if (fieldErrors.name || fieldErrors.email || fieldErrors.password || fieldErrors.confirmPassword) {
-        return {
-            fieldErrors,
-            values: { name, email },
-        } satisfies ActionData;
-    }
-
-    return redirect("/signin");
-}
-
 export default function SignUp() {
-    const actionData = useActionData<typeof action>();
+    const navigate = useNavigate();
     const navigation = useNavigation();
+    const [actionData, setActionData] = useState<ActionData | null>(null);
     const isSubmitting = navigation.state === "submitting";
+
+    function onSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+
+        const name = String(formData.get("name") ?? "").trim();
+        const email = String(formData.get("email") ?? "").trim();
+        const password = String(formData.get("password") ?? "");
+        const confirmPassword = String(formData.get("confirmPassword") ?? "");
+
+        const fieldErrors: ActionData["fieldErrors"] = {};
+
+        if (!name) {
+            fieldErrors.name = "Le nom est requis.";
+        } else if (name.length < 2) {
+            fieldErrors.name = "Le nom doit contenir au moins 2 caractères.";
+        }
+
+        if (!email) {
+            fieldErrors.email = "L'email est requis.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            fieldErrors.email = "Format d'email invalide.";
+        }
+
+        if (!password) {
+            fieldErrors.password = "Le mot de passe est requis.";
+        } else if (password.length < 8) {
+            fieldErrors.password = "Le mot de passe doit contenir au moins 8 caractères.";
+        }
+
+        if (!confirmPassword) {
+            fieldErrors.confirmPassword = "Merci de confirmer le mot de passe.";
+        } else if (confirmPassword !== password) {
+            fieldErrors.confirmPassword = "Les mots de passe ne correspondent pas.";
+        }
+
+        if (fieldErrors.name || fieldErrors.email || fieldErrors.password || fieldErrors.confirmPassword) {
+            setActionData({
+                fieldErrors,
+                values: { name, email },
+            });
+            return;
+        }
+
+        setActionData(null);
+        navigate("/signin");
+    }
 
     return (
         <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
@@ -85,7 +87,7 @@ export default function SignUp() {
                     Renseigne tes informations pour créer ton compte.
                 </p>
 
-                <Form method="post" className="mt-6 space-y-5" noValidate>
+                <form onSubmit={onSubmit} className="mt-6 space-y-5" noValidate>
                     <div>
                         <label htmlFor="name" className="mb-1 block text-sm font-medium">
                             Nom
@@ -167,7 +169,7 @@ export default function SignUp() {
                     >
                         {isSubmitting ? "Création..." : "Créer mon compte"}
                     </button>
-                </Form>
+                </form>
 
                 <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
                     Déjà inscrit ?{" "}

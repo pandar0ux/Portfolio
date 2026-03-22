@@ -1,10 +1,8 @@
+import { useState, type FormEvent } from "react";
 import {
-    Form,
     Link,
-    redirect,
-    useActionData,
+    useNavigate,
     useNavigation,
-    type ActionFunctionArgs,
     type MetaFunction,
 } from "react-router";
 
@@ -25,39 +23,44 @@ export const meta: MetaFunction = () => {
     ];
 };
 
-export async function action({ request }: ActionFunctionArgs) {
-    const formData = await request.formData();
-    const email = String(formData.get("email") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-
-    const fieldErrors: ActionData["fieldErrors"] = {};
-
-    if (!email) {
-        fieldErrors.email = "L'email est requis.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        fieldErrors.email = "Format d'email invalide.";
-    }
-
-    if (!password) {
-        fieldErrors.password = "Le mot de passe est requis.";
-    } else if (password.length < 8) {
-        fieldErrors.password = "Le mot de passe doit contenir au moins 8 caractères.";
-    }
-
-    if (fieldErrors.email || fieldErrors.password) {
-        return {
-            fieldErrors,
-            values: { email },
-        } satisfies ActionData;
-    }
-
-    return redirect("/");
-}
-
 export default function SignIn() {
-    const actionData = useActionData<typeof action>();
+    const navigate = useNavigate();
     const navigation = useNavigation();
+    const [actionData, setActionData] = useState<ActionData | null>(null);
     const isSubmitting = navigation.state === "submitting";
+
+    function onSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+
+        const email = String(formData.get("email") ?? "").trim();
+        const password = String(formData.get("password") ?? "");
+
+        const fieldErrors: ActionData["fieldErrors"] = {};
+
+        if (!email) {
+            fieldErrors.email = "L'email est requis.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            fieldErrors.email = "Format d'email invalide.";
+        }
+
+        if (!password) {
+            fieldErrors.password = "Le mot de passe est requis.";
+        } else if (password.length < 8) {
+            fieldErrors.password = "Le mot de passe doit contenir au moins 8 caractères.";
+        }
+
+        if (fieldErrors.email || fieldErrors.password) {
+            setActionData({
+                fieldErrors,
+                values: { email },
+            });
+            return;
+        }
+
+        setActionData(null);
+        navigate("/");
+    }
 
     return (
         <main className="min-h-screen bg-gray-50 px-4 py-10 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
@@ -67,7 +70,7 @@ export default function SignIn() {
                     Connecte-toi à ton espace admin.
                 </p>
 
-                <Form method="post" className="mt-6 space-y-5" noValidate>
+                <form onSubmit={onSubmit} className="mt-6 space-y-5" noValidate>
                     <div>
                         <label htmlFor="email" className="mb-1 block text-sm font-medium">
                             Email
@@ -112,7 +115,7 @@ export default function SignIn() {
                     >
                         {isSubmitting ? "Connexion..." : "Se connecter"}
                     </button>
-                </Form>
+                </form>
 
                 <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
                     Retour à l'accueil :{" "}
